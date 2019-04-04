@@ -1,0 +1,3 @@
+development:
+    driver: postgres
+    open: user= dbname= password= host= port= sslmode=disable
