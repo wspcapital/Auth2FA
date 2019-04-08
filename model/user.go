@@ -9,7 +9,7 @@ type User struct {
 	ChatID            int64
 	Alias             string
 	Email             string
-	Phone             int
+	Phone             int64
 	Passw             string
 	FirstName         string
 	LastName          string

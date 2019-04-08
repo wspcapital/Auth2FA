@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/batonych/copier/model"
-	"github.com/batonych/copier/service"
+	"github.com/Auth2FA/model"
+	"github.com/Auth2FA/service"
 	"os"
 	"time"
 
@@ -16,6 +16,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
+	"regexp"
+	"strconv"
 )
 
 var DBConnect *gorm.DB
@@ -35,6 +37,7 @@ type newUser struct {
 	FirstName    string `json:"firstname"`
 	LastName     string `json:"lastname"`
 	Email        string `json:"email"`
+	Phone        string `json:"phone"`
 	Password     string `json:"password"`
 	ConfPassword string `json:"confpassword"`
 	ChatID       int64  `json:"chatid"`
@@ -265,9 +268,27 @@ func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	var user model.User
-	err := DBConnect.Table("users").
+
+	re, err := regexp.Compile(`\D`)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+	userPhone, err := strconv.ParseInt(re.ReplaceAllString(u.Phone, ""), 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	/*err = DBConnect.Table("users").
 		Select("users.email, users.passw, users.salt, users.chat_id").
-		Where("users.email =  ?", u.Email).First(&user).Error
+		Where("users.phone =  ?", userPhone).First(&user).Error*/
+
+	err = DBConnect.Table("users").
+		Select("users.email, users.phone").
+		Where("users.email =  ? or users.phone =  ?", u.Email, userPhone).First(&user).Error
 
 	if gorm.IsRecordNotFoundError(err) == true {
 		salt := service.GetRandomString(15)
@@ -280,6 +301,7 @@ func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
 			Passw:          encodedPwd,
 			Active:         true,
 			Email:          u.Email,
+			Phone:			userPhone,
 			Salt:           salt,
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),
@@ -302,7 +324,7 @@ func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte("Email " + user.Email + " is used"))
+	w.Write([]byte("Email " + user.Email + " OR " + strconv.FormatInt(user.Phone, 10) + " is used"))
 }
 
 func SetEmailNoteEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -428,5 +450,5 @@ func main() {
 	router.HandleFunc("/set-email-note/{set-param}", ValidateMiddleware(SetEmailNoteEndpoint)).Methods("GET")
 	router.HandleFunc("/set-telegram-note/{set-param}", ValidateMiddleware(SetTelegramNoteEndpoint)).Methods("GET")
 	router.HandleFunc("/generate-secret", service.GenerateSecretEndpoint).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":" + os.Getenv("APP_PORT"), router))
 }

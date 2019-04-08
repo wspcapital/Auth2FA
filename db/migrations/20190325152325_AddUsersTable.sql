@@ -5,7 +5,7 @@ CREATE TABLE users (
   Chat_ID int DEFAULT NULL,
   Alias VARCHAR(32) NOT NULL,
   Email VARCHAR(64) NOT NULL,
-  Phone int DEFAULT NULL,
+  Phone bigint DEFAULT NULL,
   Passw VARCHAR(512) NOT NULL,
   First_name VARCHAR(64) NOT NULL,
   Last_name VARCHAR(64) NOT NULL,
