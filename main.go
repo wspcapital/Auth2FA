@@ -62,7 +62,7 @@ func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		var user model.User
 		err = DBConnect.Table("users").
 			Select("users.email, users.passw, users.salt, users.chat_id").
-			Where("users.id =  ? and users.passw = ?", decodedToken["user_id"], decodedToken["password"]).First(&user).Error
+			Where("users.session_key =  ?", decodedToken["session_key"]).First(&user).Error
 
 		if gorm.IsRecordNotFoundError(err) {
 			w.WriteHeader(http.StatusBadRequest)
@@ -120,11 +120,24 @@ func CreateTokenEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	otp := service.GetRandomString(24)
+	sessionKey := service.GetRandomString(24)
+
+	if err := DBConnect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+
+	tokenExp, err := service.GetTokenExpiredOTPPeriod()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
 
 	authUser := make(map[string]interface{})
-	authUser["expiresIn"] = time.Now().Add(time.Second * 3600).Unix()
-	authUser["user_id"] = user.ID
-	authUser["password"] = user.Passw
+	authUser["expiresIn"] = tokenExp
+	authUser["session_key"] = sessionKey
 	authUser["otp"] = otp
 	authUser["authorized"] = false
 
@@ -176,9 +189,10 @@ func VerifyOtpGetEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	var user model.User
+
 	err = DBConnect.Table("users").
 		Select("users.email, users.passw, users.salt, users.chat_id").
-		Where("users.id =  ? and users.passw = ?", decodedToken["user_id"], decodedToken["password"]).First(&user).Error
+		Where("users.session_key =  ?", decodedToken["session_key"]).First(&user).Error
 
 	if err != nil && gorm.IsRecordNotFoundError(err) == true {
 		w.WriteHeader(http.StatusBadRequest)
@@ -187,6 +201,12 @@ func VerifyOtpGetEndpoint(w http.ResponseWriter, req *http.Request) {
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err.Error())
+		return
+	}
+
+	if int64(decodedToken["expiresIn"].(float64)) < time.Now().Unix() {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode("Token is expired")
 		return
 	}
 
@@ -204,7 +224,16 @@ func VerifyOtpGetEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if decodedToken["otp"] == vars["otp"] {
+		tokenExp, err := service.GetTokenExpiredPeriod()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(err)
+			return
+		}
+
 		decodedToken["authorized"] = true
+		decodedToken["expiresIn"] = tokenExp
+		delete(decodedToken, "otp")
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode("Invalid one-time password")
@@ -232,9 +261,10 @@ func RefreshJwtEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	var user model.User
+
 	err = DBConnect.Table("users").
 		Select("users.email, users.passw, users.salt, users.chat_id").
-		Where("users.id =  ? and users.passw = ?", decodedToken["user_id"], decodedToken["password"]).First(&user).Error
+		Where("users.session_key =  ? ", decodedToken["session_key"]).First(&user).Error
 
 	if err != nil && gorm.IsRecordNotFoundError(err) == true {
 		w.WriteHeader(http.StatusBadRequest)
@@ -252,7 +282,23 @@ func RefreshJwtEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	decodedToken["expiresIn"] = time.Now().Add(time.Second * 3600).Unix()
+	sessionKey := service.GetRandomString(24)
+
+	if err := DBConnect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+
+	tokenExp, err := service.GetTokenExpiredPeriod()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+
+	decodedToken["expiresIn"] = tokenExp
+	decodedToken["session_key"] = sessionKey
 	jwToken, _ := service.SignJwt(decodedToken, jwtSecret)
 	json.NewEncoder(w).Encode(jwToken)
 }
@@ -281,10 +327,6 @@ func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
 		json.NewEncoder(w).Encode(err.Error())
 		return
 	}
-
-	/*err = DBConnect.Table("users").
-		Select("users.email, users.passw, users.salt, users.chat_id").
-		Where("users.phone =  ?", userPhone).First(&user).Error*/
 
 	err = DBConnect.Table("users").
 		Select("users.email, users.phone").

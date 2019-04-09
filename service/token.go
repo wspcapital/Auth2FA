@@ -5,6 +5,9 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"strconv"
+	"os"
+	"time"
 )
 
 func SignJwt(claims jwt.MapClaims, secret string) (string, error) {
@@ -38,4 +41,20 @@ func GetBearerToken(header string) (string, error) {
 		return "", fmt.Errorf("Malformed bearer token")
 	}
 	return token[1], nil
+}
+
+func GetTokenExpiredOTPPeriod() (int64, error)  {
+	tokenExpFactor, err := strconv.Atoi(os.Getenv("Token_Expired_OTP_Factor"))
+	if err != nil {
+		return 0, err
+	}
+	return time.Now().Add(time.Minute * time.Duration(tokenExpFactor)).Unix(), nil
+}
+
+func GetTokenExpiredPeriod() (int64, error)  {
+	tokenExpFactor, err := strconv.Atoi(os.Getenv("Token_Expired_Factor"))
+	if err != nil {
+		return 0, err
+	}
+	return time.Now().Add(time.Minute * time.Duration(tokenExpFactor)).Unix(), nil
 }
