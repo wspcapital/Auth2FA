@@ -1,6 +1,6 @@
 {
 	"id": "6fea7446-d059-4c00-83e1-46d1e6cdf9be",
-	"name": "Stock",
+	"name": "Auth2FA",
 	"description": "Stock API",
 	"auth": null,
 	"events": null,
@@ -24,7 +24,8 @@
 				"1531176d-a46f-4b68-8629-729968978ed9",
 				"e345e630-56a3-483a-ac6b-500f70075b2e",
 				"9d4234cc-9134-4d80-8890-755a2d1d83f1",
-				"7121fb0a-9101-4860-9a1b-f98d4555086c"
+				"7121fb0a-9101-4860-9a1b-f98d4555086c",
+				"ef015f1e-cd5d-49d3-a110-cd4653d933ff"
 			],
 			"folders_order": []
 		}
@@ -149,7 +150,7 @@
 		},
 		{
 			"id": "e98086cb-a029-498c-8e7a-326807b73161",
-			"name": "Get Token",
+			"name": "SignIn",
 			"url": "{{domain}}/authenticate",
 			"description": "Get Token",
 			"data": [],
@@ -162,6 +163,30 @@
 			"events": null,
 			"folder": "1eeac2d6-cd68-4c84-b344-d24187c29a8e",
 			"rawModeData": "{\"email\":\"wspcapital@gmail.com\",\"password\":\"qwerty123\"}",
+			"pathVariables": {}
+		},
+		{
+			"id": "ef015f1e-cd5d-49d3-a110-cd4653d933ff",
+			"name": "JWT Refresh",
+			"url": "{{domain}}/jwt-refresh",
+			"description": "",
+			"data": null,
+			"dataMode": null,
+			"headerData": null,
+			"method": "GET",
+			"pathVariableData": [],
+			"queryParams": [],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{Bearer}}"
+					}
+				]
+			},
+			"events": null,
+			"folder": "1eeac2d6-cd68-4c84-b344-d24187c29a8e",
 			"pathVariables": {}
 		}
 	]
