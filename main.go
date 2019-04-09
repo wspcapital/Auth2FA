@@ -20,8 +20,6 @@ import (
 	"strconv"
 )
 
-var DBConnect *gorm.DB
-
 var jwtSecret string
 
 type JWTToken struct {
@@ -60,7 +58,7 @@ func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var user model.User
-		err = DBConnect.Table("users").
+		err = db.Connect.Table("users").
 			Select("users.email, users.passw, users.salt, users.chat_id").
 			Where("users.session_key =  ?", decodedToken["session_key"]).First(&user).Error
 
@@ -105,7 +103,7 @@ func CreateTokenEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	var user model.User
-	if err := DBConnect.Table("users").
+	if err := db.Connect.Table("users").
 		Select("users.id, users.email, users.passw, users.salt, users.chat_id, users.two_factor_email, users.two_factor_telegram").
 		Where("users.email =  ?", u.Email).Find(&user).Error; err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -122,7 +120,7 @@ func CreateTokenEndpoint(w http.ResponseWriter, req *http.Request) {
 	otp := service.GetRandomString(24)
 	sessionKey := service.GetRandomString(24)
 
-	if err := DBConnect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
+	if err := db.Connect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err)
 		return
@@ -190,7 +188,7 @@ func VerifyOtpGetEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	var user model.User
 
-	err = DBConnect.Table("users").
+	err = db.Connect.Table("users").
 		Select("users.email, users.passw, users.salt, users.chat_id").
 		Where("users.session_key =  ?", decodedToken["session_key"]).First(&user).Error
 
@@ -262,7 +260,7 @@ func RefreshJwtEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	var user model.User
 
-	err = DBConnect.Table("users").
+	err = db.Connect.Table("users").
 		Select("users.email, users.passw, users.salt, users.chat_id").
 		Where("users.session_key =  ? ", decodedToken["session_key"]).First(&user).Error
 
@@ -284,7 +282,7 @@ func RefreshJwtEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	sessionKey := service.GetRandomString(24)
 
-	if err := DBConnect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
+	if err := db.Connect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err)
 		return
@@ -328,7 +326,7 @@ func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = DBConnect.Table("users").
+	err = db.Connect.Table("users").
 		Select("users.email, users.phone").
 		Where("users.email =  ? or users.phone =  ?", u.Email, userPhone).First(&user).Error
 
@@ -351,7 +349,7 @@ func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
 			TwoFactorEmail: true,
 		}
 
-		if err := DBConnect.Create(&User).Error; err != nil {
+		if err := db.Connect.Create(&User).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(err.Error())
 			return
@@ -388,7 +386,7 @@ func SetEmailNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		var user model.User
 
-		if err := DBConnect.Table("users").
+		if err := db.Connect.Table("users").
 			Select("users.*").
 			Where("users.session_key =  ?", mapJWT["session_key"]).First(&user).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -397,7 +395,7 @@ func SetEmailNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if user.TwoFactorEmail != setParam {
-			if err := DBConnect.Model(&user).Update(map[string]interface{}{"two_factor_email":setParam}).Error; err != nil {
+			if err := db.Connect.Model(&user).Update(map[string]interface{}{"two_factor_email":setParam}).Error; err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(err.Error())
 				return
@@ -428,7 +426,7 @@ func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 	mapJWT, ok := decoded.(map[string]interface{})
 	if ok {
 		var user model.User
-		if err :=  DBConnect.Table("users").
+		if err :=  db.Connect.Table("users").
 			Select("users.*").
 			Where("users.session_key =  ?", mapJWT["session_key"]).First(&user).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -437,7 +435,7 @@ func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if user.ChatID == 0 {
-			if err := DBConnect.Model(&user).Update(map[string]interface{}{"telegram_key_token":service.GetRandomString(24)}).Error; err != nil {
+			if err := db.Connect.Model(&user).Update(map[string]interface{}{"telegram_key_token":service.GetRandomString(24)}).Error; err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(err.Error())
 				return
@@ -451,7 +449,7 @@ func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 		if user.TwoFactorTelegram != setParam {
 			user.TwoFactorTelegram = setParam
 
-			if err := DBConnect.Save(&user).Error; err != nil {
+			if err := db.Connect.Save(&user).Error; err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(err.Error())
 				return
@@ -468,17 +466,19 @@ func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 
 var telegramBot service.TelegramBot
 
+var db service.DB
+
 func main() {
 	err := godotenv.Load()
-	db, err := gorm.Open("postgres",
-		"host="+os.Getenv("DB_HOST")+" port="+os.Getenv("DB_PORT")+" user="+os.Getenv("DB_USER")+" dbname="+os.Getenv("DB_NAME")+" password="+os.Getenv("DB_PSW"))
-	DBConnect = db
+
+	err = db.Init()
+
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer db.Connect.Close()
 
-	telegramBot.Init(db)
+	telegramBot.Init(db.Connect)
 	go telegramBot.Start()
 
 	router := mux.NewRouter()
