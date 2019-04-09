@@ -66,7 +66,7 @@ func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		if gorm.IsRecordNotFoundError(err) {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode("Access is incorrect")
+				json.NewEncoder(w).Encode("Access is incorrect")
 			return
 		} else if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -300,7 +300,7 @@ func RefreshJwtEndpoint(w http.ResponseWriter, req *http.Request) {
 	decodedToken["expiresIn"] = tokenExp
 	decodedToken["session_key"] = sessionKey
 	jwToken, _ := service.SignJwt(decodedToken, jwtSecret)
-	json.NewEncoder(w).Encode(jwToken)
+	json.NewEncoder(w).Encode(JWTToken{Token: jwToken})
 }
 
 func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -388,16 +388,16 @@ func SetEmailNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		var user model.User
 
-		if err := DBConnect.First(&user, int(mapJWT["user_id"].(float64))).Error; err != nil {
+		if err := DBConnect.Table("users").
+			Select("users.*").
+			Where("users.session_key =  ?", mapJWT["session_key"]).First(&user).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(err.Error())
 			return
 		}
 
 		if user.TwoFactorEmail != setParam {
-			user.TwoFactorEmail = setParam
-
-			if err := DBConnect.Save(&user).Error; err != nil {
+			if err := DBConnect.Model(&user).Update(map[string]interface{}{"two_factor_email":setParam}).Error; err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(err.Error())
 				return
@@ -428,16 +428,16 @@ func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 	mapJWT, ok := decoded.(map[string]interface{})
 	if ok {
 		var user model.User
-		if err := DBConnect.First(&user, int(mapJWT["user_id"].(float64))).Error; err != nil {
+		if err :=  DBConnect.Table("users").
+			Select("users.*").
+			Where("users.session_key =  ?", mapJWT["session_key"]).First(&user).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(err.Error())
 			return
 		}
 
 		if user.ChatID == 0 {
-			user.TelegramKeyToken = service.GetRandomString(24)
-
-			if err := DBConnect.Save(&user).Error; err != nil {
+			if err := DBConnect.Model(&user).Update(map[string]interface{}{"telegram_key_token":service.GetRandomString(24)}).Error; err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(err.Error())
 				return
