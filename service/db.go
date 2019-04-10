@@ -1,9 +1,10 @@
 package service
 
 import (
-	"github.com/jinzhu/gorm"
-	"os"
 	"fmt"
+	"os"
+
+	"github.com/jinzhu/gorm"
 )
 
 var DB DBConnect
@@ -12,15 +13,15 @@ type DBConnect struct {
 	Connect *gorm.DB
 }
 
-func (db *DBConnect) Init() error  {
+func (db *DBConnect) Init() error {
 
 	c, err := gorm.Open(
 		"postgres",
-		"host="+os.Getenv("DB_HOST") +
-		" port="+os.Getenv("DB_PORT") +
-		" user="+os.Getenv("DB_USER") +
-		" dbname="+os.Getenv("DB_NAME") +
-		" password="+os.Getenv("DB_PSW"))
+		"host="+os.Getenv("DB_HOST")+
+			" port="+os.Getenv("DB_PORT")+
+			" user="+os.Getenv("DB_USER")+
+			" dbname="+os.Getenv("DB_NAME")+
+			" password="+os.Getenv("DB_PSW"))
 
 	if err != nil {
 		return err

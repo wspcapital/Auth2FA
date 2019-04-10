@@ -1,9 +1,10 @@
 package endpoint
 
 import (
-	"net/http"
-	"github.com/gorilla/context"
 	"encoding/json"
+	"net/http"
+
+	"github.com/gorilla/context"
 )
 
 func ProtectedEndpoint(w http.ResponseWriter, req *http.Request) {

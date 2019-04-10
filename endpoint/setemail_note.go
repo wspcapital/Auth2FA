@@ -1,12 +1,13 @@
 package endpoint
 
 import (
+	"encoding/json"
 	"net/http"
+
+	"github.com/Auth2FA/model"
+	"github.com/Auth2FA/service"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"encoding/json"
-	"github.com/Auth2FA/service"
-	"github.com/Auth2FA/model"
 )
 
 func SetEmailNoteEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -37,7 +38,7 @@ func SetEmailNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if user.TwoFactorEmail != setParam {
-			if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"two_factor_email":setParam}).Error; err != nil {
+			if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"two_factor_email": setParam}).Error; err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(err.Error())
 				return

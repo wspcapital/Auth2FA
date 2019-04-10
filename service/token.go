@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
-	"strconv"
 	"os"
+	"strconv"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 var JWTSecret string
@@ -49,7 +50,7 @@ func GetBearerToken(header string) (string, error) {
 	return token[1], nil
 }
 
-func GetTokenExpiredOTPPeriod() (int64, error)  {
+func GetTokenExpiredOTPPeriod() (int64, error) {
 	tokenExpFactor, err := strconv.Atoi(os.Getenv("Token_Expired_OTP_Factor"))
 	if err != nil {
 		return 0, err
@@ -57,7 +58,7 @@ func GetTokenExpiredOTPPeriod() (int64, error)  {
 	return time.Now().Add(time.Minute * time.Duration(tokenExpFactor)).Unix(), nil
 }
 
-func GetTokenExpiredPeriod() (int64, error)  {
+func GetTokenExpiredPeriod() (int64, error) {
 	tokenExpFactor, err := strconv.Atoi(os.Getenv("Token_Expired_Factor"))
 	if err != nil {
 		return 0, err

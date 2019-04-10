@@ -1,10 +1,11 @@
 package endpoint
 
 import (
-	"net/http"
 	"encoding/json"
-	"github.com/Auth2FA/service"
+	"net/http"
+
 	"github.com/Auth2FA/model"
+	"github.com/Auth2FA/service"
 )
 
 type signinUser struct {
@@ -38,7 +39,7 @@ func CreateTokenEndpoint(w http.ResponseWriter, req *http.Request) {
 	otp := service.GetRandomString(24)
 	sessionKey := service.GetRandomString(24)
 
-	if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
+	if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"session_key": sessionKey}).Error; err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err)
 		return

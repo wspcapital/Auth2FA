@@ -6,17 +6,18 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Auth2FA/model"
-	"github.com/Auth2FA/service"
 	"os"
 	"time"
 
+	"github.com/Auth2FA/model"
+	"github.com/Auth2FA/service"
+
+	"github.com/Auth2FA/endpoint"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
-	"github.com/Auth2FA/endpoint"
 )
 
 func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -42,7 +43,7 @@ func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		if gorm.IsRecordNotFoundError(err) {
 			w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode("Access is incorrect")
+			json.NewEncoder(w).Encode("Access is incorrect")
 			return
 		} else if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -106,5 +107,5 @@ func main() {
 
 	router.HandleFunc("/generate-secret", service.GenerateSecretEndpoint).Methods("GET")
 
-	log.Fatal(http.ListenAndServe(":" + os.Getenv("APP_PORT"), router))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("APP_PORT"), router))
 }

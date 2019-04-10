@@ -18,7 +18,7 @@ type User struct {
 	Salt              string
 	TwoFactorEmail    bool
 	TwoFactorTelegram bool
-    TelegramKeyToken  string
+	TelegramKeyToken  string
 	SessionKey        string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time

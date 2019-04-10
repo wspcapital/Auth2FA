@@ -1,13 +1,14 @@
 package endpoint
 
 import (
-	"net/http"
 	"encoding/json"
-	"github.com/Auth2FA/service"
-	"github.com/jinzhu/gorm"
+	"net/http"
 	"time"
-	"github.com/gorilla/mux"
+
 	"github.com/Auth2FA/model"
+	"github.com/Auth2FA/service"
+	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 )
 
 func VerifyOtpGetEndpoint(w http.ResponseWriter, req *http.Request) {

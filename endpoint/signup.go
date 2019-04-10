@@ -1,14 +1,15 @@
 package endpoint
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 	"regexp"
 	"strconv"
+	"time"
+
+	"github.com/Auth2FA/model"
 	"github.com/Auth2FA/service"
 	"github.com/jinzhu/gorm"
-	"time"
-	"github.com/Auth2FA/model"
 )
 
 type newUser struct {
@@ -61,7 +62,7 @@ func SignUpEndpoint(w http.ResponseWriter, req *http.Request) {
 			Passw:          encodedPwd,
 			Active:         true,
 			Email:          u.Email,
-			Phone:			userPhone,
+			Phone:          userPhone,
 			Salt:           salt,
 			CreatedAt:      time.Now(),
 			UpdatedAt:      time.Now(),

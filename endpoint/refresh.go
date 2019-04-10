@@ -1,11 +1,12 @@
 package endpoint
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
+
+	"github.com/Auth2FA/model"
 	"github.com/Auth2FA/service"
 	"github.com/jinzhu/gorm"
-	"github.com/Auth2FA/model"
 )
 
 func RefreshJwtEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -48,7 +49,7 @@ func RefreshJwtEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	sessionKey := service.GetRandomString(24)
 
-	if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"session_key":sessionKey}).Error; err != nil {
+	if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"session_key": sessionKey}).Error; err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err)
 		return

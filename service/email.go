@@ -1,10 +1,10 @@
 package service
 
 import (
-	"regexp"
-	"strings"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 )
 
 func SendOtpByCurlEmail(recipient string, otp string) (bool, error) {
@@ -33,14 +33,14 @@ func SendOtpByCurlEmail(recipient string, otp string) (bool, error) {
 
 	req, err := http.NewRequest("POST", "https://api.sendgrid.com/v3/mail/send", body)
 	if err != nil {
-		return false,err
+		return false, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer " + os.Getenv("SG_API_KEY"))
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("SG_API_KEY"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return false,err
+		return false, err
 	}
 	defer resp.Body.Close()
 

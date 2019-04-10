@@ -1,12 +1,13 @@
 package endpoint
 
 import (
+	"encoding/json"
 	"net/http"
+
+	"github.com/Auth2FA/model"
+	"github.com/Auth2FA/service"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"encoding/json"
-	"github.com/Auth2FA/service"
-	"github.com/Auth2FA/model"
 )
 
 func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -26,7 +27,7 @@ func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 	mapJWT, ok := decoded.(map[string]interface{})
 	if ok {
 		var user model.User
-		if err :=  service.DB.Connect.Table("users").
+		if err := service.DB.Connect.Table("users").
 			Select("users.*").
 			Where("users.session_key =  ?", mapJWT["session_key"]).First(&user).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -35,7 +36,7 @@ func SetTelegramNoteEndpoint(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if user.ChatID == 0 {
-			if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"telegram_key_token":service.GetRandomString(24)}).Error; err != nil {
+			if err := service.DB.Connect.Model(&user).Update(map[string]interface{}{"telegram_key_token": service.GetRandomString(24)}).Error; err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(err.Error())
 				return

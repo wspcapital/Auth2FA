@@ -1,19 +1,20 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/batonych/copier/model"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/jinzhu/gorm"
-	"fmt"
-	"github.com/batonych/copier/model"
 )
 
 type TelegramBot struct {
-	API                   *tgbotapi.BotAPI
-	Updates               tgbotapi.UpdatesChannel
+	API     *tgbotapi.BotAPI
+	Updates tgbotapi.UpdatesChannel
 }
 
 func SendOtpByTelegram(chat_id int64, otp string) bool {
@@ -34,7 +35,7 @@ func SendOtpByTelegram(chat_id int64, otp string) bool {
 	return true
 }
 
-func (telegramBot *TelegramBot) Init() error  {
+func (telegramBot *TelegramBot) Init() error {
 
 	botAPI, err := tgbotapi.NewBotAPI(os.Getenv("BOT_API_KEY"))
 	if err != nil {
@@ -42,7 +43,7 @@ func (telegramBot *TelegramBot) Init() error  {
 	}
 	var user model.User
 
-	if err !=nil {
+	if err != nil {
 		fmt.Print(err.Error())
 	} else {
 		fmt.Print(user.Email)
@@ -78,7 +79,7 @@ func (telegramBot *TelegramBot) Start() {
 					Where("users.telegram_key_token = ?", update.Message.Text).First(&user).Error
 
 				if err == nil {
-					if err := DB.Connect.Model(&user).Update(map[string]interface{}{"chat_id":chatID,"two_factor_telegram":true}).Error; err == nil {
+					if err := DB.Connect.Model(&user).Update(map[string]interface{}{"chat_id": chatID, "two_factor_telegram": true}).Error; err == nil {
 						requestMessage := tgbotapi.NewMessage(chatID, "Telegram Authorization is successfully")
 						result, _ := telegramBot.API.Send(requestMessage)
 						fmt.Println(result)
