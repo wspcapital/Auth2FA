@@ -6,11 +6,13 @@ import (
 	"fmt"
 )
 
-type DB struct {
+var DB DBConnect
+
+type DBConnect struct {
 	Connect *gorm.DB
 }
 
-func (db *DB) Init() error  {
+func (db *DBConnect) Init() error  {
 
 	c, err := gorm.Open(
 		"postgres",
@@ -23,7 +25,10 @@ func (db *DB) Init() error  {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Starting the application...")
+
 	db.Connect = c
+
+	fmt.Println("Db Connect Successfully...")
+
 	return nil
 }

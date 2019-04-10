@@ -16,8 +16,6 @@ type TelegramBot struct {
 	Updates               tgbotapi.UpdatesChannel
 }
 
-var DBConnect *gorm.DB
-
 func SendOtpByTelegram(chat_id int64, otp string) bool {
 	body := strings.NewReader("chat_id=" + strconv.FormatInt(chat_id, 10) + "&text=" + otp)
 
@@ -36,12 +34,18 @@ func SendOtpByTelegram(chat_id int64, otp string) bool {
 	return true
 }
 
-func (telegramBot *TelegramBot) Init(db *gorm.DB) error  {
-	DBConnect = db
+func (telegramBot *TelegramBot) Init() error  {
 
 	botAPI, err := tgbotapi.NewBotAPI(os.Getenv("BOT_API_KEY"))
 	if err != nil {
 		return err
+	}
+	var user model.User
+
+	if err !=nil {
+		fmt.Print(err.Error())
+	} else {
+		fmt.Print(user.Email)
 	}
 
 	telegramBot.API = botAPI
@@ -69,12 +73,12 @@ func (telegramBot *TelegramBot) Start() {
 				fmt.Println(result)
 			} else if update.Message != nil {
 				var user model.User
-				err := DBConnect.Table("users").
+				err := DB.Connect.Table("users").
 					Select("users.email, users.passw, users.salt, users.chat_id").
 					Where("users.telegram_key_token = ?", update.Message.Text).First(&user).Error
 
 				if err == nil {
-					if err := DBConnect.Model(&user).Update(map[string]interface{}{"chat_id":chatID,"two_factor_telegram":true}).Error; err == nil {
+					if err := DB.Connect.Model(&user).Update(map[string]interface{}{"chat_id":chatID,"two_factor_telegram":true}).Error; err == nil {
 						requestMessage := tgbotapi.NewMessage(chatID, "Telegram Authorization is successfully")
 						result, _ := telegramBot.API.Send(requestMessage)
 						fmt.Println(result)
