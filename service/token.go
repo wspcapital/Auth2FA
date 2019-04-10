@@ -10,6 +10,12 @@ import (
 	"time"
 )
 
+var JWTSecret string
+
+type JWTToken struct {
+	Token string `json:"token"`
+}
+
 func SignJwt(claims jwt.MapClaims, secret string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
