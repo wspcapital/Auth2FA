@@ -91,6 +91,8 @@ func main() {
 	fmt.Println("Starting the application...")
 	service.JWTSecret = os.Getenv("APP_JWT_SECRET")
 
+	router.HandleFunc("/", endpoint.WelcomeEndpoint).Methods("GET")
+
 	router.HandleFunc("/signup", endpoint.SignUpEndpoint).Methods("POST")
 
 	router.HandleFunc("/authenticate", endpoint.CreateTokenEndpoint).Methods("POST")
